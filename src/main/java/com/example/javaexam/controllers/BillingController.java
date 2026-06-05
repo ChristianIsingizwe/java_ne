@@ -4,14 +4,18 @@ import com.example.javaexam.config.SecuredApiErrorResponses;
 import com.example.javaexam.dtos.billing.BillResponse;
 import com.example.javaexam.dtos.billing.GenerateBillRequest;
 import com.example.javaexam.services.contract.BillingServiceContract;
+import com.example.javaexam.utils.ValidationPatterns;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
 import java.security.Principal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Tag(name = "Bills")
 @SecuredApiErrorResponses
+@Validated
 public class BillingController {
 
     private final BillingServiceContract billingService;
@@ -39,7 +44,10 @@ public class BillingController {
     @GetMapping("/{billReference}")
     @PreAuthorize("hasAnyRole('ADMIN','FINANCE')")
     @Operation(summary = "Get a bill by reference")
-    public BillResponse get(@PathVariable String billReference) {
+    public BillResponse get(
+            @PathVariable
+            @Pattern(regexp = ValidationPatterns.BILL_REFERENCE, message = "Bill reference format is invalid")
+            String billReference) {
         return billingService.getByReference(billReference);
     }
 
@@ -54,14 +62,14 @@ public class BillingController {
     @PostMapping("/{billId}/approve")
     @PreAuthorize("hasAnyRole('ADMIN','FINANCE')")
     @Operation(summary = "Approve a generated bill")
-    public BillResponse approve(@PathVariable Long billId, Principal principal) {
+    public BillResponse approve(@PathVariable @Positive Long billId, Principal principal) {
         return billingService.approve(billId, principal.getName());
     }
 
     @PostMapping("/{billId}/late-penalty")
     @PreAuthorize("hasAnyRole('ADMIN','FINANCE')")
     @Operation(summary = "Apply late payment penalty to a bill")
-    public BillResponse applyLatePenalty(@PathVariable Long billId) {
+    public BillResponse applyLatePenalty(@PathVariable @Positive Long billId) {
         return billingService.applyLatePenalty(billId);
     }
 }

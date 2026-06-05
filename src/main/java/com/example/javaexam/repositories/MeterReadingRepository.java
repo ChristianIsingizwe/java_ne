@@ -14,5 +14,8 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, Long
     Optional<MeterReading> findById(Long id);
 
     @EntityGraph(attributePaths = {"meter", "meter.customer", "meter.customer.profile"})
+    Optional<MeterReading> findTopByMeterIdOrderByReadingYearDescReadingMonthDescReadingDateDescIdDesc(Long meterId);
+
+    @EntityGraph(attributePaths = {"meter", "meter.customer", "meter.customer.profile"})
     List<MeterReading> findAllByOrderByReadingYearDescReadingMonthDescIdDesc();
 }

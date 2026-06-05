@@ -42,7 +42,7 @@ public class UserService implements UserServiceContract {
         String nationalId = InputSanitizer.normalizeOptional(request.nationalId());
         String address = InputSanitizer.normalizeOptional(request.address());
 
-        ensureUniqueness(email, nationalId, null);
+        ensureUniqueness(email, phone, nationalId, null);
         // The current permission model assumes one role per managed user, which keeps downstream
         // authorization and portal mapping predictable.
         if (request.roles().size() != 1) {
@@ -114,11 +114,16 @@ public class UserService implements UserServiceContract {
                 customerRepository.findByProfileId(user.getProfile().getId()).map(Customer::getId).orElse(null));
     }
 
-    private void ensureUniqueness(String email, String nationalId, Long profileId) {
+    private void ensureUniqueness(String email, String phone, String nationalId, Long profileId) {
         profileRepository.findByEmailIgnoreCase(email)
                 .filter(profile -> !profile.getId().equals(profileId))
                 .ifPresent(profile -> {
                     throw ApiException.conflict("Email already exists");
+                });
+        profileRepository.findByPhoneNumber(phone)
+                .filter(profile -> !profile.getId().equals(profileId))
+                .ifPresent(profile -> {
+                    throw ApiException.conflict("Phone number already exists");
                 });
         if (nationalId != null) {
             profileRepository.findByNationalId(nationalId)

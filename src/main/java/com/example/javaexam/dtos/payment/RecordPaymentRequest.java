@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.example.javaexam.models.enums.PaymentMethod;
 import com.example.javaexam.utils.ValidationPatterns;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -16,7 +17,7 @@ public record RecordPaymentRequest(
         @NotBlank
         @Pattern(regexp = ValidationPatterns.BILL_REFERENCE, message = "Bill reference format is invalid")
         String billReference,
-        @NotNull @DecimalMin("0.01") BigDecimal amountPaid,
+        @NotNull @DecimalMin("0.01") @Digits(integer = 12, fraction = 2) BigDecimal amountPaid,
         @NotNull PaymentMethod paymentMethod,
         @NotNull
         @PastOrPresent(message = "Payment date cannot be in the future")

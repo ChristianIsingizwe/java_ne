@@ -7,11 +7,13 @@ import com.example.javaexam.services.contract.PaymentServiceContract;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import java.security.Principal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Tag(name = "Payments")
 @SecuredApiErrorResponses
+@Validated
 public class PaymentController {
 
     private final PaymentServiceContract paymentService;
@@ -47,7 +50,7 @@ public class PaymentController {
     @PostMapping("/{paymentId}/approve")
     @PreAuthorize("hasAnyRole('ADMIN','FINANCE')")
     @Operation(summary = "Approve a recorded payment")
-    public PaymentResponse approve(@PathVariable Long paymentId, Principal principal) {
+    public PaymentResponse approve(@PathVariable @Positive Long paymentId, Principal principal) {
         return paymentService.approve(paymentId, principal.getName());
     }
 }

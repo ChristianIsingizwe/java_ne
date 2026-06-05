@@ -46,7 +46,7 @@ public class AuthService implements AuthServiceContract {
         String nationalId = InputSanitizer.normalizeRequired(request.nationalId(), "National ID");
         String address = InputSanitizer.normalizeRequired(request.address(), "Address");
 
-        ensureProfileUniqueness(email, nationalId, null);
+        ensureProfileUniqueness(email, phone, nationalId, null);
 
         Role customerRole = roleRepository.findByName(RoleName.ROLE_CUSTOMER)
                 .orElseThrow(() -> new IllegalStateException("ROLE_CUSTOMER is missing"));
@@ -92,11 +92,16 @@ public class AuthService implements AuthServiceContract {
                 applicationMapper.toUserResponse(user, customerId));
     }
 
-    private void ensureProfileUniqueness(String email, String nationalId, Long profileId) {
+    private void ensureProfileUniqueness(String email, String phone, String nationalId, Long profileId) {
         profileRepository.findByEmailIgnoreCase(email)
                 .filter(profile -> !profile.getId().equals(profileId))
                 .ifPresent(profile -> {
                     throw ApiException.conflict("Email already exists");
+                });
+        profileRepository.findByPhoneNumber(phone)
+                .filter(profile -> !profile.getId().equals(profileId))
+                .ifPresent(profile -> {
+                    throw ApiException.conflict("Phone number already exists");
                 });
         profileRepository.findByNationalId(nationalId)
                 .filter(profile -> !profile.getId().equals(profileId))

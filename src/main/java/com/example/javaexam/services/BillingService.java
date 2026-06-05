@@ -21,6 +21,7 @@ import com.example.javaexam.repositories.MeterReadingRepository;
 import com.example.javaexam.repositories.TariffVersionRepository;
 import com.example.javaexam.repositories.UserRepository;
 import com.example.javaexam.services.contract.BillingServiceContract;
+import com.example.javaexam.utils.InputSanitizer;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -208,7 +209,8 @@ public class BillingService implements BillingServiceContract {
     }
 
     public BillResponse getByReference(String billReference) {
-        Bill bill = billRepository.findByBillReference(billReference)
+        String normalizedReference = InputSanitizer.normalizeRequired(billReference, "Bill reference").toUpperCase();
+        Bill bill = billRepository.findByBillReference(normalizedReference)
                 .orElseThrow(() -> ApiException.notFound("Bill not found"));
         return applicationMapper.toBillResponse(
                 bill, billLineItemRepository.findByBillIdOrderByDisplayOrderAsc(bill.getId()));

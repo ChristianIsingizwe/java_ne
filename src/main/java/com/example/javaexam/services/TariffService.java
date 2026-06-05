@@ -60,6 +60,9 @@ public class TariffService implements TariffServiceContract {
     }
 
     private void validateEffectiveDate(CreateTariffRequest request) {
+        if (request.effectiveFrom().getDayOfMonth() != 1) {
+            throw ApiException.badRequest("Tariff effective date must be the first day of a month");
+        }
         boolean existingTariffs = tariffVersionRepository.countByMeterType(request.meterType()) > 0;
         if (existingTariffs && !request.effectiveFrom().isAfter(LocalDate.now().withDayOfMonth(1))) {
             throw ApiException.badRequest("New tariff versions must target a future billing cycle");

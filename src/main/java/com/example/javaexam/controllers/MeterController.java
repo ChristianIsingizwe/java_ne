@@ -11,10 +11,12 @@ import com.example.javaexam.services.contract.MeterServiceContract;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @Tag(name = "Meters")
 @SecuredApiErrorResponses
+@Validated
 public class MeterController {
 
     private final MeterServiceContract meterService;
@@ -44,7 +47,7 @@ public class MeterController {
     @GetMapping("/{meterId}")
     @PreAuthorize("hasAnyRole('ADMIN','FINANCE','OPERATOR')")
     @Operation(summary = "Get a meter by id")
-    public MeterResponse get(@PathVariable Long meterId) {
+    public MeterResponse get(@PathVariable @Positive Long meterId) {
         return meterService.get(meterId);
     }
 
@@ -59,7 +62,7 @@ public class MeterController {
     @PutMapping("/{meterId}")
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(summary = "Update a utility meter")
-    public MeterResponse update(@PathVariable Long meterId, @Valid @RequestBody UpdateMeterRequest request) {
+    public MeterResponse update(@PathVariable @Positive Long meterId, @Valid @RequestBody UpdateMeterRequest request) {
         return meterService.update(meterId, request);
     }
 

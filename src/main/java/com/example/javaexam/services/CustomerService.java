@@ -42,7 +42,7 @@ public class CustomerService implements CustomerServiceContract {
         String phone = InputSanitizer.normalizeRequired(request.phoneNumber(), "Phone number");
         String address = InputSanitizer.normalizeRequired(request.address(), "Address");
 
-        ensureUniqueness(email, nationalId, customer.getProfile().getId());
+        ensureUniqueness(email, phone, nationalId, customer.getProfile().getId());
 
         customer.getProfile().setFullName(fullName);
         customer.getProfile().setNationalId(nationalId);
@@ -65,11 +65,16 @@ public class CustomerService implements CustomerServiceContract {
                 .orElseThrow(() -> ApiException.notFound("Customer not found"));
     }
 
-    private void ensureUniqueness(String email, String nationalId, Long profileId) {
+    private void ensureUniqueness(String email, String phone, String nationalId, Long profileId) {
         profileRepository.findByEmailIgnoreCase(email)
                 .filter(profile -> !profile.getId().equals(profileId))
                 .ifPresent(profile -> {
                     throw ApiException.conflict("Email already exists");
+                });
+        profileRepository.findByPhoneNumber(phone)
+                .filter(profile -> !profile.getId().equals(profileId))
+                .ifPresent(profile -> {
+                    throw ApiException.conflict("Phone number already exists");
                 });
         profileRepository.findByNationalId(nationalId)
                 .filter(profile -> !profile.getId().equals(profileId))

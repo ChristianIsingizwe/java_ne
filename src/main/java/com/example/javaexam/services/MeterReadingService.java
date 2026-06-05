@@ -10,6 +10,7 @@ import com.example.javaexam.models.enums.RecordStatus;
 import com.example.javaexam.repositories.MeterReadingRepository;
 import com.example.javaexam.repositories.MeterRepository;
 import com.example.javaexam.services.contract.MeterReadingServiceContract;
+import java.time.YearMonth;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ public class MeterReadingService implements MeterReadingServiceContract {
         if (request.currentReading().compareTo(request.previousReading()) <= 0) {
             throw ApiException.badRequest("Current reading must be greater than previous reading");
         }
+        validateReadingHistory(meter, request);
 
         int year = request.readingDate().getYear();
         int month = request.readingDate().getMonthValue();
@@ -59,5 +61,20 @@ public class MeterReadingService implements MeterReadingServiceContract {
         return meterReadingRepository.findAllByOrderByReadingYearDescReadingMonthDescIdDesc().stream()
                 .map(applicationMapper::toMeterReadingResponse)
                 .toList();
+    }
+
+    private void validateReadingHistory(Meter meter, CreateMeterReadingRequest request) {
+        meterReadingRepository.findTopByMeterIdOrderByReadingYearDescReadingMonthDescReadingDateDescIdDesc(meter.getId())
+                .ifPresent(latestReading -> {
+                    YearMonth latestPeriod = YearMonth.of(latestReading.getReadingYear(), latestReading.getReadingMonth());
+                    YearMonth requestedPeriod = YearMonth.from(request.readingDate());
+                    if (!requestedPeriod.isAfter(latestPeriod)) {
+                        throw ApiException.badRequest("Meter readings must be captured in chronological monthly order");
+                    }
+                    if (request.previousReading().compareTo(latestReading.getCurrentReading()) != 0) {
+                        throw ApiException.badRequest(
+                                "Previous reading must match the latest recorded current reading for this meter");
+                    }
+                });
     }
 }

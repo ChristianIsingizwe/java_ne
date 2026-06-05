@@ -5,6 +5,7 @@ import com.example.javaexam.models.enums.MeterType;
 import com.example.javaexam.models.enums.TariffType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotEmpty;
@@ -20,9 +21,9 @@ public record CreateTariffRequest(
         @JsonFormat(pattern = "yyyy-MM-dd")
         @Schema(example = "2026-07-01", type = "string", format = "date")
         LocalDate effectiveFrom,
-        @NotNull @DecimalMin("0.00") BigDecimal fixedServiceCharge,
-        @NotNull @DecimalMin("0.1800") @DecimalMax("0.1800") BigDecimal vatRate,
-        @NotNull @DecimalMin("0.00") BigDecimal latePaymentPenaltyRate,
+        @NotNull @DecimalMin("0.00") @Digits(integer = 12, fraction = 2) BigDecimal fixedServiceCharge,
+        @NotNull @DecimalMin("0.1800") @DecimalMax("0.1800") @Digits(integer = 1, fraction = 4) BigDecimal vatRate,
+        @NotNull @DecimalMin("0.00") @Digits(integer = 1, fraction = 4) BigDecimal latePaymentPenaltyRate,
         @NotEmpty List<@Valid TariffTierRequest> tiers
 ) {
 }

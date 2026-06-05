@@ -8,13 +8,14 @@ import com.example.javaexam.utils.ValidationPatterns;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.PastOrPresent;
 import java.time.LocalDate;
 
 public record CreateMeterRequest(
-        @NotNull Long customerId,
+        @NotNull @Positive Long customerId,
         @NotBlank @Pattern(regexp = ValidationPatterns.METER_NUMBER, message = "Meter number may only contain letters, digits, hyphens, or slashes") @Size(max = 50) String meterNumber,
         @NotNull MeterType meterType,
         @NotNull MeterBillingMode billingMode,
