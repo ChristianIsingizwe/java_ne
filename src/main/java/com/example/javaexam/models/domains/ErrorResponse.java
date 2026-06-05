@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+import java.util.Map;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,12 +26,27 @@ public class ErrorResponse {
     @Schema(example = "Validation failed: {email=Email must be a valid address}")
     private String message = "";
 
+    @Schema(example = "400")
+    private int status;
+
+    @Schema(example = "/api/auth/signup")
+    private String path;
+
+    private Map<String, String> errors;
+
     public ErrorResponse(String message) {
         this.message = message;
     }
 
+    public ErrorResponse(String message, int status, String path, Map<String, String> errors) {
+        this.message = message;
+        this.status = status;
+        this.path = path;
+        this.errors = errors;
+    }
+
     public ResponseEntity<ErrorResponse> toResponseEntity(HttpStatusCode status) {
-        assert this.message != null;
+        this.status = status.value();
         return ResponseEntity.status(status).body(this);
     }
 }

@@ -1,8 +1,13 @@
 package com.example.javaexam.config;
 
-import com.example.javaexam.models.enums.Role;
+import com.example.javaexam.models.Profile;
+import com.example.javaexam.models.Role;
 import com.example.javaexam.models.User;
+import com.example.javaexam.models.enums.RecordStatus;
+import com.example.javaexam.models.enums.RoleName;
+import com.example.javaexam.repositories.RoleRepository;
 import com.example.javaexam.repositories.UserRepository;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,16 +15,12 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-/**
- * Seeds a verified {@code ADMIN} account on startup (if it does not already
- * exist) so the role-based endpoints can be exercised out of the box.
- * Credentials are configurable via {@code app.admin.*} properties.
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
 
+    private final RoleRepository roleRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -29,26 +30,36 @@ public class DataInitializer implements CommandLineRunner {
     @Value("${app.admin.password}")
     private String adminPassword;
 
-    @Value("${app.admin.first-name}")
-    private String adminFirstName;
+    @Value("${app.admin.full-name}")
+    private String adminFullName;
 
-    @Value("${app.admin.last-name}")
-    private String adminLastName;
+    @Value("${app.admin.phone}")
+    private String adminPhone;
 
     @Override
     public void run(String... args) {
+        for (RoleName roleName : RoleName.values()) {
+            roleRepository.findByName(roleName)
+                    .orElseGet(() -> roleRepository.save(Role.builder().name(roleName).build()));
+        }
+
         String email = adminEmail.trim().toLowerCase();
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             return;
         }
 
+        Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN)
+                .orElseThrow(() -> new IllegalStateException("ROLE_ADMIN was not seeded"));
+
         User admin = User.builder()
-                .firstName(adminFirstName)
-                .lastName(adminLastName)
-                .email(email)
+                .profile(Profile.builder()
+                        .fullName(adminFullName)
+                        .email(email)
+                        .phoneNumber(adminPhone)
+                        .status(RecordStatus.ACTIVE)
+                        .build())
                 .password(passwordEncoder.encode(adminPassword))
-                .role(Role.ADMIN)
-                .enabled(true)
+                .roles(Set.of(adminRole))
                 .build();
         userRepository.save(admin);
 

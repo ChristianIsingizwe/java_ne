@@ -13,12 +13,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-/**
- * Wires the core Spring Security beans: how users are loaded
- * ({@link UserDetailsService}), how passwords are hashed
- * ({@link PasswordEncoder}), and how credentials are verified
- * ({@link AuthenticationProvider} / {@link AuthenticationManager}).
- */
 @Configuration
 @RequiredArgsConstructor
 public class ApplicationConfig {
@@ -27,7 +21,7 @@ public class ApplicationConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return email -> userRepository.findByEmail(email)
+        return email -> userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
     }
 
