@@ -3,7 +3,7 @@ package com.example.javaexam.controllers;
 import com.example.javaexam.config.SecuredApiErrorResponses;
 import com.example.javaexam.dtos.billing.BillResponse;
 import com.example.javaexam.dtos.billing.GenerateBillRequest;
-import com.example.javaexam.services.BillingService;
+import com.example.javaexam.services.contract.BillingServiceContract;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @SecuredApiErrorResponses
 public class BillingController {
 
-    private final BillingService billingService;
+    private final BillingServiceContract billingService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','FINANCE')")

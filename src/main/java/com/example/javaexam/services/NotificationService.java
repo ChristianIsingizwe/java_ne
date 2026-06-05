@@ -8,13 +8,14 @@ import com.example.javaexam.models.enums.BillStatus;
 import com.example.javaexam.models.enums.PaymentStatus;
 import com.example.javaexam.repositories.CustomerRepository;
 import com.example.javaexam.repositories.NotificationRepository;
+import com.example.javaexam.services.contract.NotificationServiceContract;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class NotificationService {
+public class NotificationService implements NotificationServiceContract {
 
     private final NotificationRepository notificationRepository;
     private final CustomerRepository customerRepository;
@@ -29,6 +30,9 @@ public class NotificationService {
     public List<NotificationResponse> listForCurrentCustomer(String email) {
         Customer customer = customerRepository.findByProfileEmailIgnoreCase(email)
                 .orElseThrow(() -> ApiException.notFound("Customer account not found"));
+
+        // Portal users should only see business events that have cleared approval gates; database
+        // triggers create notifications earlier than the portal is allowed to expose them.
         return notificationRepository.findByCustomerIdOrderByCreatedAtDesc(customer.getId()).stream()
                 .filter(notification -> notification.getBill() == null
                         || notification.getBill().getStatus() == BillStatus.APPROVED

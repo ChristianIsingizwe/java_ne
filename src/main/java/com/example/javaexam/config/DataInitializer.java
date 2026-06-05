@@ -38,6 +38,8 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        // Roles are seeded defensively at startup so auth and authorization do not depend on
+        // manual SQL being applied beyond the base schema migration.
         for (RoleName roleName : RoleName.values()) {
             roleRepository.findByName(roleName)
                     .orElseGet(() -> roleRepository.save(Role.builder().name(roleName).build()));
@@ -51,6 +53,7 @@ public class DataInitializer implements CommandLineRunner {
         Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN)
                 .orElseThrow(() -> new IllegalStateException("ROLE_ADMIN was not seeded"));
 
+        // The admin account bootstraps first access to the system in fresh environments.
         User admin = User.builder()
                 .profile(Profile.builder()
                         .fullName(adminFullName)

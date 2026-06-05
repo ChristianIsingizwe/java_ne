@@ -16,6 +16,7 @@ import com.example.javaexam.repositories.ProfileRepository;
 import com.example.javaexam.repositories.RoleRepository;
 import com.example.javaexam.repositories.UserRepository;
 import com.example.javaexam.security.JwtService;
+import com.example.javaexam.services.contract.AuthServiceContract;
 import com.example.javaexam.utils.InputSanitizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class AuthService implements AuthServiceContract {
 
     private final UserRepository userRepository;
     private final ProfileRepository profileRepository;
@@ -59,6 +60,8 @@ public class AuthService {
                 .status(RecordStatus.ACTIVE)
                 .build();
 
+        // Customer portal users participate in both auth and billing flows, so signup creates
+        // the domain customer record alongside the login-capable user record.
         Customer customer = customerRepository.save(Customer.builder().profile(profile).build());
         User user = userRepository.save(User.builder()
                 .profile(profile)

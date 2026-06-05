@@ -7,9 +7,9 @@ import com.example.javaexam.dtos.payment.PaymentResponse;
 import com.example.javaexam.exceptions.ApiException;
 import com.example.javaexam.models.Customer;
 import com.example.javaexam.repositories.CustomerRepository;
-import com.example.javaexam.services.BillingService;
-import com.example.javaexam.services.NotificationService;
-import com.example.javaexam.services.PaymentService;
+import com.example.javaexam.services.contract.BillingServiceContract;
+import com.example.javaexam.services.contract.NotificationServiceContract;
+import com.example.javaexam.services.contract.PaymentServiceContract;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.security.Principal;
@@ -29,9 +29,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class CustomerPortalController {
 
     private final CustomerRepository customerRepository;
-    private final BillingService billingService;
-    private final PaymentService paymentService;
-    private final NotificationService notificationService;
+    private final BillingServiceContract billingService;
+    private final PaymentServiceContract paymentService;
+    private final NotificationServiceContract notificationService;
 
     @GetMapping("/bills")
     @Operation(summary = "View bills for the authenticated customer")

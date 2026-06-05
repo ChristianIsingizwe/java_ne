@@ -1,15 +1,14 @@
 package com.example.javaexam.services;
 
 import com.example.javaexam.dtos.common.StatusUpdateRequest;
-import com.example.javaexam.dtos.customer.CreateCustomerRequest;
 import com.example.javaexam.dtos.customer.CustomerResponse;
 import com.example.javaexam.dtos.customer.UpdateCustomerRequest;
 import com.example.javaexam.exceptions.ApiException;
 import com.example.javaexam.mappers.ApplicationMapper;
 import com.example.javaexam.models.Customer;
-import com.example.javaexam.models.Profile;
 import com.example.javaexam.repositories.CustomerRepository;
 import com.example.javaexam.repositories.ProfileRepository;
+import com.example.javaexam.services.contract.CustomerServiceContract;
 import com.example.javaexam.utils.InputSanitizer;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -18,33 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class CustomerService {
+public class CustomerService implements CustomerServiceContract {
 
     private final CustomerRepository customerRepository;
     private final ProfileRepository profileRepository;
     private final ApplicationMapper applicationMapper;
-
-    @Transactional
-    public CustomerResponse create(CreateCustomerRequest request) {
-        String fullName = InputSanitizer.normalizeRequired(request.fullName(), "Full name");
-        String nationalId = InputSanitizer.normalizeRequired(request.nationalId(), "National ID");
-        String email = InputSanitizer.normalizeEmail(request.email());
-        String phone = InputSanitizer.normalizeRequired(request.phoneNumber(), "Phone number");
-        String address = InputSanitizer.normalizeRequired(request.address(), "Address");
-
-        ensureUniqueness(email, nationalId, null);
-        Customer customer = customerRepository.save(Customer.builder()
-                .profile(Profile.builder()
-                        .fullName(fullName)
-                        .nationalId(nationalId)
-                        .email(email)
-                        .phoneNumber(phone)
-                        .address(address)
-                        .status(request.status())
-                        .build())
-                .build());
-        return applicationMapper.toCustomerResponse(customer);
-    }
 
     public List<CustomerResponse> list() {
         return customerRepository.findAllByOrderByIdAsc().stream()

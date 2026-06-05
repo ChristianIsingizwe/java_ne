@@ -21,16 +21,16 @@ public record CreateUserRequest(
         @NotBlank
         @Pattern(regexp = ValidationPatterns.PHONE, message = "Phone number must be a valid Rwanda number in the format 07XXXXXXXX")
         String phoneNumber,
-        @Schema(example = "1199081234567890", description = "Optional for staff users")
+        @Schema(example = "1199081234567890", description = "Required for customers, optional for staff users")
         @Pattern(regexp = "(^$)|" + ValidationPatterns.NATIONAL_ID, message = "National ID must be empty or contain exactly 16 digits")
         String nationalId,
-        @Schema(example = "Kigali, Nyarugenge")
+        @Schema(example = "Kigali, Nyarugenge", description = "Required for customers, optional for staff users")
         @Size(max = 255) String address,
         @Schema(example = "SecurePass123")
         @NotBlank @Pattern(regexp = ValidationPatterns.PASSWORD, message = "Password must contain letters and digits and be 8 to 100 characters long") String password,
         @Schema(example = "ACTIVE", allowableValues = {"ACTIVE", "INACTIVE"})
         @NotNull RecordStatus status,
-        @Schema(example = "[\"ROLE_OPERATOR\"]", allowableValues = {"ROLE_ADMIN", "ROLE_OPERATOR", "ROLE_FINANCE", "ROLE_CUSTOMER"})
+        @Schema(example = "[\"ROLE_OPERATOR\"]", allowableValues = {"ROLE_OPERATOR", "ROLE_FINANCE", "ROLE_CUSTOMER"})
         @NotEmpty Set<RoleName> roles
 ) {
 }

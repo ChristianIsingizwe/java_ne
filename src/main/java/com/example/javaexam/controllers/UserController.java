@@ -4,7 +4,7 @@ import com.example.javaexam.config.SecuredApiErrorResponses;
 import com.example.javaexam.dtos.common.StatusUpdateRequest;
 import com.example.javaexam.dtos.user.CreateUserRequest;
 import com.example.javaexam.dtos.user.UserResponse;
-import com.example.javaexam.services.UserService;
+import com.example.javaexam.services.contract.UserServiceContract;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 @SecuredApiErrorResponses
 public class UserController {
 
-    private final UserService userService;
+    private final UserServiceContract userService;
 
     @GetMapping("/me")
     @Operation(summary = "View the current authenticated user")
@@ -47,7 +47,7 @@ public class UserController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "Create a staff or customer user")
+    @Operation(summary = "Create an operator, finance, or customer user")
     public UserResponse create(@Valid @RequestBody CreateUserRequest request) {
         return userService.create(request);
     }

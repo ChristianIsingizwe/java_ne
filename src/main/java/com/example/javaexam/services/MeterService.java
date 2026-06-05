@@ -12,6 +12,7 @@ import com.example.javaexam.models.enums.MeterType;
 import com.example.javaexam.models.enums.RecordStatus;
 import com.example.javaexam.repositories.CustomerRepository;
 import com.example.javaexam.repositories.MeterRepository;
+import com.example.javaexam.services.contract.MeterServiceContract;
 import com.example.javaexam.utils.InputSanitizer;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class MeterService {
+public class MeterService implements MeterServiceContract {
 
     private final MeterRepository meterRepository;
     private final CustomerRepository customerRepository;

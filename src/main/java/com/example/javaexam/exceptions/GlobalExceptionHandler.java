@@ -1,7 +1,7 @@
 package com.example.javaexam.exceptions;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
-import com.example.javaexam.models.domains.ErrorResponse;
+import com.example.javaexam.api.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import java.time.LocalDate;

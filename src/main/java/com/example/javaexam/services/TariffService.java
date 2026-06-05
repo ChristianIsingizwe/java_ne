@@ -9,6 +9,7 @@ import com.example.javaexam.models.TariffTier;
 import com.example.javaexam.models.TariffVersion;
 import com.example.javaexam.models.enums.TariffType;
 import com.example.javaexam.repositories.TariffVersionRepository;
+import com.example.javaexam.services.contract.TariffServiceContract;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -18,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class TariffService {
+public class TariffService implements TariffServiceContract {
 
     private final TariffVersionRepository tariffVersionRepository;
     private final ApplicationMapper applicationMapper;
@@ -70,6 +71,8 @@ public class TariffService {
                 .sorted(Comparator.comparing(TariffTierRequest::fromUnit))
                 .toList();
 
+        // Billing resolves usage by walking contiguous ranges, so tariff definitions must already
+        // be normalized before they are persisted.
         if (tariffType == TariffType.FLAT) {
             if (sorted.size() != 1 || sorted.get(0).fromUnit() != 0 || sorted.get(0).toUnit() != null) {
                 throw ApiException.badRequest("Flat tariffs require a single open-ended tier starting at 0");

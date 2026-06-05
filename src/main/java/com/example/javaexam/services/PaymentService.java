@@ -12,6 +12,7 @@ import com.example.javaexam.models.enums.PaymentStatus;
 import com.example.javaexam.repositories.BillRepository;
 import com.example.javaexam.repositories.PaymentRepository;
 import com.example.javaexam.repositories.UserRepository;
+import com.example.javaexam.services.contract.PaymentServiceContract;
 import com.example.javaexam.utils.InputSanitizer;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -23,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class PaymentService {
+public class PaymentService implements PaymentServiceContract {
 
     private final PaymentRepository paymentRepository;
     private final BillRepository billRepository;
@@ -77,6 +78,9 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.APPROVED);
         payment.setApprovedBy(approver);
         payment.setApprovedAt(LocalDateTime.now());
+
+        // Bill settlement is finalized by a database trigger so partial and full payment updates
+        // stay consistent regardless of how the payment row is approved.
         paymentRepository.save(payment);
 
         return applicationMapper.toPaymentResponse(payment);

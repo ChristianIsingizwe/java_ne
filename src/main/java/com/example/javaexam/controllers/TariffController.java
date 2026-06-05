@@ -3,7 +3,7 @@ package com.example.javaexam.controllers;
 import com.example.javaexam.config.SecuredApiErrorResponses;
 import com.example.javaexam.dtos.tariff.CreateTariffRequest;
 import com.example.javaexam.dtos.tariff.TariffVersionResponse;
-import com.example.javaexam.services.TariffService;
+import com.example.javaexam.services.contract.TariffServiceContract;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @SecuredApiErrorResponses
 public class TariffController {
 
-    private final TariffService tariffService;
+    private final TariffServiceContract tariffService;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")

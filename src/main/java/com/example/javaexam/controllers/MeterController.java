@@ -6,8 +6,8 @@ import com.example.javaexam.dtos.meter.CreateMeterReadingRequest;
 import com.example.javaexam.dtos.meter.MeterReadingResponse;
 import com.example.javaexam.dtos.meter.MeterResponse;
 import com.example.javaexam.dtos.meter.UpdateMeterRequest;
-import com.example.javaexam.services.MeterReadingService;
-import com.example.javaexam.services.MeterService;
+import com.example.javaexam.services.contract.MeterReadingServiceContract;
+import com.example.javaexam.services.contract.MeterServiceContract;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -31,8 +31,8 @@ import org.springframework.web.bind.annotation.RestController;
 @SecuredApiErrorResponses
 public class MeterController {
 
-    private final MeterService meterService;
-    private final MeterReadingService meterReadingService;
+    private final MeterServiceContract meterService;
+    private final MeterReadingServiceContract meterReadingService;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','FINANCE','OPERATOR')")
@@ -64,7 +64,7 @@ public class MeterController {
     }
 
     @PostMapping("/readings")
-    @PreAuthorize("hasRole('OPERATOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','OPERATOR')")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Capture a meter reading")
     public MeterReadingResponse captureReading(@Valid @RequestBody CreateMeterReadingRequest request) {

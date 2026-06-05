@@ -4,7 +4,7 @@ import com.example.javaexam.config.PublicApiErrorResponses;
 import com.example.javaexam.dtos.auth.AuthResponse;
 import com.example.javaexam.dtos.auth.LoginRequest;
 import com.example.javaexam.dtos.auth.SignupRequest;
-import com.example.javaexam.services.AuthService;
+import com.example.javaexam.services.contract.AuthServiceContract;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @PublicApiErrorResponses
 public class AuthController {
 
-    private final AuthService authService;
+    private final AuthServiceContract authService;
 
     @PostMapping("/signup")
     @ResponseStatus(HttpStatus.CREATED)

@@ -2,7 +2,7 @@ package com.example.javaexam.controllers;
 
 import com.example.javaexam.config.SecuredApiErrorResponses;
 import com.example.javaexam.dtos.notification.NotificationResponse;
-import com.example.javaexam.services.NotificationService;
+import com.example.javaexam.services.contract.NotificationServiceContract;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @SecuredApiErrorResponses
 public class NotificationController {
 
-    private final NotificationService notificationService;
+    private final NotificationServiceContract notificationService;
 
     @GetMapping("/customer/{customerId}")
     @PreAuthorize("hasAnyRole('ADMIN','FINANCE')")

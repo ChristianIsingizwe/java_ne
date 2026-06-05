@@ -20,6 +20,7 @@ import com.example.javaexam.repositories.BillRepository;
 import com.example.javaexam.repositories.MeterReadingRepository;
 import com.example.javaexam.repositories.TariffVersionRepository;
 import com.example.javaexam.repositories.UserRepository;
+import com.example.javaexam.services.contract.BillingServiceContract;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -33,7 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class BillingService {
+public class BillingService implements BillingServiceContract {
 
     private static final BigDecimal ZERO = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
 
@@ -84,6 +85,8 @@ public class BillingService {
         User generatedBy = userRepository.findByEmailIgnoreCase(generatedByEmail)
                 .orElseThrow(() -> ApiException.notFound("Generating user not found"));
 
+        // Bills start pending so finance/admin can review generated amounts before the customer
+        // sees them or any payment is recorded against them.
         Bill bill = billRepository.save(Bill.builder()
                 .billReference(buildBillReference(reading))
                 .customer(meter.getCustomer())
@@ -104,6 +107,7 @@ public class BillingService {
                 .generatedBy(generatedBy)
                 .build());
 
+        // Line items preserve the billing breakdown that was used to derive the aggregate totals.
         billLineItemRepository.saveAll(List.of(
                 BillLineItem.builder()
                         .bill(bill)
@@ -221,6 +225,8 @@ public class BillingService {
                 .sorted(Comparator.comparing(TariffTier::getFromUnit))
                 .toList();
 
+        // Tier bounds are interpreted as progressive brackets rather than a single rate applied
+        // to all consumed units.
         for (TariffTier tier : tiers) {
             BigDecimal lower = BigDecimal.valueOf(tier.getFromUnit());
             BigDecimal upper = tier.getToUnit() == null ? consumption : BigDecimal.valueOf(tier.getToUnit());
@@ -241,6 +247,8 @@ public class BillingService {
     }
 
     private BigDecimal resolveBaseUnitPrice(TariffVersion tariffVersion) {
+        // The response exposes a representative unit price for display; the actual charge is
+        // always taken from the tier-by-tier calculation above.
         return tariffVersion.getTiers().stream()
                 .min(Comparator.comparing(TariffTier::getFromUnit))
                 .map(TariffTier::getPricePerUnit)

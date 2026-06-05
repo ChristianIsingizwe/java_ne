@@ -14,6 +14,7 @@ import com.example.javaexam.repositories.CustomerRepository;
 import com.example.javaexam.repositories.ProfileRepository;
 import com.example.javaexam.repositories.RoleRepository;
 import com.example.javaexam.repositories.UserRepository;
+import com.example.javaexam.services.contract.UserServiceContract;
 import com.example.javaexam.utils.InputSanitizer;
 import java.util.List;
 import java.util.Set;
@@ -24,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserService implements UserServiceContract {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -42,12 +43,20 @@ public class UserService {
         String address = InputSanitizer.normalizeOptional(request.address());
 
         ensureUniqueness(email, nationalId, null);
+        // The current permission model assumes one role per managed user, which keeps downstream
+        // authorization and portal mapping predictable.
         if (request.roles().size() != 1) {
-            throw ApiException.badRequest("A staff user must have exactly one role");
+            throw ApiException.badRequest("A user must have exactly one role");
         }
         RoleName requestedRole = request.roles().iterator().next();
-        if (requestedRole != RoleName.ROLE_OPERATOR && requestedRole != RoleName.ROLE_FINANCE) {
-            throw ApiException.badRequest("The admin can only create operator or finance users");
+        if (requestedRole != RoleName.ROLE_OPERATOR
+                && requestedRole != RoleName.ROLE_FINANCE
+                && requestedRole != RoleName.ROLE_CUSTOMER) {
+            throw ApiException.badRequest("The admin can only create operator, finance, or customer users");
+        }
+        if (requestedRole == RoleName.ROLE_CUSTOMER) {
+            nationalId = InputSanitizer.normalizeRequired(request.nationalId(), "National ID");
+            address = InputSanitizer.normalizeRequired(request.address(), "Address");
         }
         Set<Role> roles = request.roles().stream()
                 .map(roleName -> roleRepository.findByName(roleName)
@@ -69,7 +78,13 @@ public class UserService {
                 .roles(roles)
                 .build());
 
-        return applicationMapper.toUserResponse(user, null);
+        Long customerId = null;
+        if (requestedRole == RoleName.ROLE_CUSTOMER) {
+            // Customer users need a billing identity in addition to a login identity.
+            customerId = customerRepository.save(Customer.builder().profile(profile).build()).getId();
+        }
+
+        return applicationMapper.toUserResponse(user, customerId);
     }
 
     public List<UserResponse> list() {
