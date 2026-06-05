@@ -9,4 +9,6 @@ public interface AuthServiceContract {
     AuthResponse signup(SignupRequest request);
 
     AuthResponse login(LoginRequest request);
+
+    void logout(String authorizationHeader);
 }

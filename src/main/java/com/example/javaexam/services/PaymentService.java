@@ -2,6 +2,7 @@ package com.example.javaexam.services;
 
 import com.example.javaexam.dtos.payment.PaymentResponse;
 import com.example.javaexam.dtos.payment.RecordPaymentRequest;
+import com.example.javaexam.events.PaymentApprovedEvent;
 import com.example.javaexam.exceptions.ApiException;
 import com.example.javaexam.mappers.ApplicationMapper;
 import com.example.javaexam.models.Bill;
@@ -19,6 +20,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +32,7 @@ public class PaymentService implements PaymentServiceContract {
     private final BillRepository billRepository;
     private final UserRepository userRepository;
     private final ApplicationMapper applicationMapper;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public PaymentResponse record(RecordPaymentRequest request, String recordedByEmail) {
@@ -82,6 +85,7 @@ public class PaymentService implements PaymentServiceContract {
         // Bill settlement is finalized by a database trigger so partial and full payment updates
         // stay consistent regardless of how the payment row is approved.
         paymentRepository.save(payment);
+        applicationEventPublisher.publishEvent(new PaymentApprovedEvent(payment.getId()));
 
         return applicationMapper.toPaymentResponse(payment);
     }

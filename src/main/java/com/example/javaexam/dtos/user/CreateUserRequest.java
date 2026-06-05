@@ -17,9 +17,9 @@ public record CreateUserRequest(
         @NotBlank @Size(min = 3, max = 150) String fullName,
         @Schema(example = "alice.mukamana@wasac.rw")
         @NotBlank @Email @Size(max = 150) String email,
-        @Schema(example = "0788123456", description = "Rwanda phone number in local format")
+        @Schema(example = "+250788123456", description = "Rwanda phone number with optional country code")
         @NotBlank
-        @Pattern(regexp = ValidationPatterns.PHONE, message = "Phone number must be a valid Rwanda number in the format 07XXXXXXXX")
+        @Pattern(regexp = ValidationPatterns.PHONE, message = "Phone number must be a valid Rwanda number with optional country code +250")
         String phoneNumber,
         @Schema(example = "1199081234567890", description = "Required for customers, optional for staff users")
         @Pattern(regexp = "(^$)|" + ValidationPatterns.NATIONAL_ID, message = "National ID must be empty or contain exactly 16 digits")

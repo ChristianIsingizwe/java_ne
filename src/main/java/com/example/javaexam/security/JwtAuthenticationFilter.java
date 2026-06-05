@@ -1,6 +1,7 @@
 package com.example.javaexam.security;
 
 import com.example.javaexam.models.User;
+import com.example.javaexam.services.TokenRevocationService;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -9,9 +10,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -24,7 +27,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String PREFIX = "Bearer ";
 
     private final JwtService jwtService;
+    private final TokenRevocationService tokenRevocationService;
     private final UserDetailsService userDetailsService;
+    private final AuthenticationEntryPoint authenticationEntryPoint;
 
     @Override
     protected void doFilterInternal(
@@ -42,7 +47,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             claims = jwtService.parseClaims(authHeader.substring(PREFIX.length()));
         } catch (Exception ex) {
-            filterChain.doFilter(request, response);
+            authenticationEntryPoint.commence(
+                    request, response, new BadCredentialsException("Invalid or expired bearer token", ex));
+            return;
+        }
+
+        String rawToken = authHeader.substring(PREFIX.length());
+        if (tokenRevocationService.isRevoked(rawToken)) {
+            authenticationEntryPoint.commence(
+                    request, response, new BadCredentialsException("Bearer token has been revoked"));
             return;
         }
 

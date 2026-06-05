@@ -39,7 +39,7 @@ public class CustomerService implements CustomerServiceContract {
         String fullName = InputSanitizer.normalizeRequired(request.fullName(), "Full name");
         String nationalId = InputSanitizer.normalizeRequired(request.nationalId(), "National ID");
         String email = InputSanitizer.normalizeEmail(request.email());
-        String phone = InputSanitizer.normalizeRequired(request.phoneNumber(), "Phone number");
+        String phone = InputSanitizer.normalizeRwandanPhoneNumber(request.phoneNumber());
         String address = InputSanitizer.normalizeRequired(request.address(), "Address");
 
         ensureUniqueness(email, phone, nationalId, customer.getProfile().getId());
@@ -71,11 +71,13 @@ public class CustomerService implements CustomerServiceContract {
                 .ifPresent(profile -> {
                     throw ApiException.conflict("Email already exists");
                 });
-        profileRepository.findByPhoneNumber(phone)
-                .filter(profile -> !profile.getId().equals(profileId))
-                .ifPresent(profile -> {
-                    throw ApiException.conflict("Phone number already exists");
-                });
+        for (String variant : InputSanitizer.rwandanPhoneVariants(phone)) {
+            profileRepository.findByPhoneNumber(variant)
+                    .filter(profile -> !profile.getId().equals(profileId))
+                    .ifPresent(profile -> {
+                        throw ApiException.conflict("Phone number already exists");
+                    });
+        }
         profileRepository.findByNationalId(nationalId)
                 .filter(profile -> !profile.getId().equals(profileId))
                 .ifPresent(profile -> {

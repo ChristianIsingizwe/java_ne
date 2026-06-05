@@ -7,6 +7,7 @@ import com.example.javaexam.models.enums.RecordStatus;
 import com.example.javaexam.models.enums.RoleName;
 import com.example.javaexam.repositories.RoleRepository;
 import com.example.javaexam.repositories.UserRepository;
+import com.example.javaexam.utils.InputSanitizer;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +47,7 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         String email = adminEmail.trim().toLowerCase();
+        String phone = InputSanitizer.normalizeRwandanPhoneNumber(adminPhone);
         if (userRepository.existsByEmailIgnoreCase(email)) {
             return;
         }
@@ -58,7 +60,7 @@ public class DataInitializer implements CommandLineRunner {
                 .profile(Profile.builder()
                         .fullName(adminFullName)
                         .email(email)
-                        .phoneNumber(adminPhone)
+                        .phoneNumber(phone)
                         .status(RecordStatus.ACTIVE)
                         .build())
                 .password(passwordEncoder.encode(adminPassword))

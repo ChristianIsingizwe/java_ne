@@ -18,6 +18,7 @@ import com.example.javaexam.repositories.UserRepository;
 import com.example.javaexam.security.JwtService;
 import com.example.javaexam.services.contract.AuthServiceContract;
 import com.example.javaexam.utils.InputSanitizer;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,13 +37,14 @@ public class AuthService implements AuthServiceContract {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final TokenRevocationService tokenRevocationService;
     private final ApplicationMapper applicationMapper;
 
     @Transactional
     public AuthResponse signup(SignupRequest request) {
         String fullName = InputSanitizer.normalizeRequired(request.fullName(), "Full name");
         String email = InputSanitizer.normalizeEmail(request.email());
-        String phone = InputSanitizer.normalizeRequired(request.phoneNumber(), "Phone number");
+        String phone = InputSanitizer.normalizeRwandanPhoneNumber(request.phoneNumber());
         String nationalId = InputSanitizer.normalizeRequired(request.nationalId(), "National ID");
         String address = InputSanitizer.normalizeRequired(request.address(), "Address");
 
@@ -84,6 +86,17 @@ public class AuthService implements AuthServiceContract {
         return buildAuthResponse(user, customerId);
     }
 
+    @Transactional
+    public void logout(String authorizationHeader) {
+        String token = jwtService.extractBearerToken(authorizationHeader);
+        try {
+            Claims claims = jwtService.parseClaims(token);
+            tokenRevocationService.revoke(token, claims);
+        } catch (Exception ex) {
+            throw ApiException.unauthorized("Invalid or expired token");
+        }
+    }
+
     private AuthResponse buildAuthResponse(User user, Long customerId) {
         return new AuthResponse(
                 jwtService.generateToken(user),
@@ -98,11 +111,13 @@ public class AuthService implements AuthServiceContract {
                 .ifPresent(profile -> {
                     throw ApiException.conflict("Email already exists");
                 });
-        profileRepository.findByPhoneNumber(phone)
-                .filter(profile -> !profile.getId().equals(profileId))
-                .ifPresent(profile -> {
-                    throw ApiException.conflict("Phone number already exists");
-                });
+        for (String variant : InputSanitizer.rwandanPhoneVariants(phone)) {
+            profileRepository.findByPhoneNumber(variant)
+                    .filter(profile -> !profile.getId().equals(profileId))
+                    .ifPresent(profile -> {
+                        throw ApiException.conflict("Phone number already exists");
+                    });
+        }
         profileRepository.findByNationalId(nationalId)
                 .filter(profile -> !profile.getId().equals(profileId))
                 .ifPresent(profile -> {

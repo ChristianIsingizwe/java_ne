@@ -38,7 +38,7 @@ public class UserService implements UserServiceContract {
     public UserResponse create(CreateUserRequest request) {
         String fullName = InputSanitizer.normalizeRequired(request.fullName(), "Full name");
         String email = InputSanitizer.normalizeEmail(request.email());
-        String phone = InputSanitizer.normalizeRequired(request.phoneNumber(), "Phone number");
+        String phone = InputSanitizer.normalizeRwandanPhoneNumber(request.phoneNumber());
         String nationalId = InputSanitizer.normalizeOptional(request.nationalId());
         String address = InputSanitizer.normalizeOptional(request.address());
 
@@ -120,11 +120,13 @@ public class UserService implements UserServiceContract {
                 .ifPresent(profile -> {
                     throw ApiException.conflict("Email already exists");
                 });
-        profileRepository.findByPhoneNumber(phone)
-                .filter(profile -> !profile.getId().equals(profileId))
-                .ifPresent(profile -> {
-                    throw ApiException.conflict("Phone number already exists");
-                });
+        for (String variant : InputSanitizer.rwandanPhoneVariants(phone)) {
+            profileRepository.findByPhoneNumber(variant)
+                    .filter(profile -> !profile.getId().equals(profileId))
+                    .ifPresent(profile -> {
+                        throw ApiException.conflict("Phone number already exists");
+                    });
+        }
         if (nationalId != null) {
             profileRepository.findByNationalId(nationalId)
                     .filter(profile -> !profile.getId().equals(profileId))

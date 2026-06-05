@@ -8,7 +8,6 @@ import com.example.javaexam.mappers.ApplicationMapper;
 import com.example.javaexam.models.Customer;
 import com.example.javaexam.models.Meter;
 import com.example.javaexam.models.enums.MeterBillingMode;
-import com.example.javaexam.models.enums.MeterType;
 import com.example.javaexam.models.enums.RecordStatus;
 import com.example.javaexam.repositories.CustomerRepository;
 import com.example.javaexam.repositories.MeterRepository;
@@ -38,10 +37,6 @@ public class MeterService implements MeterServiceContract {
         if (customer.getProfile().getStatus() != RecordStatus.ACTIVE) {
             throw ApiException.badRequest("Meters can only be assigned to active customers");
         }
-        if (request.meterType() == MeterType.WATER && request.billingMode() == MeterBillingMode.PREPAID) {
-            throw ApiException.badRequest("Water meters must use postpaid billing");
-        }
-
         Meter meter = meterRepository.save(Meter.builder()
                 .customer(customer)
                 .meterNumber(meterNumber)
@@ -66,9 +61,6 @@ public class MeterService implements MeterServiceContract {
     @Transactional
     public MeterResponse update(Long meterId, UpdateMeterRequest request) {
         Meter meter = findMeter(meterId);
-        if (meter.getMeterType() == MeterType.WATER && request.billingMode() == MeterBillingMode.PREPAID) {
-            throw ApiException.badRequest("Water meters must use postpaid billing");
-        }
         meter.setBillingMode(request.billingMode());
         meter.setInstallationDate(request.installationDate());
         meter.setStatus(request.status());

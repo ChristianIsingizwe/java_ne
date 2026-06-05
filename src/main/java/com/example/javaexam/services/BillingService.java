@@ -2,6 +2,7 @@ package com.example.javaexam.services;
 
 import com.example.javaexam.dtos.billing.BillResponse;
 import com.example.javaexam.dtos.billing.GenerateBillRequest;
+import com.example.javaexam.events.BillApprovedEvent;
 import com.example.javaexam.exceptions.ApiException;
 import com.example.javaexam.mappers.ApplicationMapper;
 import com.example.javaexam.models.Bill;
@@ -30,6 +31,7 @@ import java.time.YearMonth;
 import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +47,7 @@ public class BillingService implements BillingServiceContract {
     private final TariffVersionRepository tariffVersionRepository;
     private final UserRepository userRepository;
     private final ApplicationMapper applicationMapper;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public BillResponse generate(GenerateBillRequest request, String generatedByEmail) {
@@ -62,7 +65,7 @@ public class BillingService implements BillingServiceContract {
             throw ApiException.badRequest("Inactive customers cannot receive bills");
         }
         if (meter.getBillingMode() != MeterBillingMode.POSTPAID) {
-            throw ApiException.badRequest("Monthly bill generation is only available for postpaid meters");
+            throw ApiException.badRequest("Only postpaid meters are supported");
         }
         if (!request.dueDate().isAfter(reading.getReadingDate())) {
             throw ApiException.badRequest("Bill due date must be after the reading date");
@@ -155,6 +158,7 @@ public class BillingService implements BillingServiceContract {
         bill.setApprovedBy(approver);
         bill.setApprovedAt(LocalDateTime.now());
         billRepository.save(bill);
+        applicationEventPublisher.publishEvent(new BillApprovedEvent(bill.getId()));
 
         return applicationMapper.toBillResponse(
                 bill, billLineItemRepository.findByBillIdOrderByDisplayOrderAsc(bill.getId()));
