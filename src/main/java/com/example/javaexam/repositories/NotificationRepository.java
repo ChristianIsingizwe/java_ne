@@ -18,11 +18,14 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @EntityGraph(attributePaths = {"customer", "customer.profile", "bill", "payment"})
     Optional<Notification> findTopByPaymentIdAndNotificationTypeOrderByCreatedAtDesc(Long paymentId, NotificationType notificationType);
 
+    @EntityGraph(attributePaths = {"customer", "customer.profile", "bill", "payment"})
+    Optional<Notification> findTopByPaymentIdOrderByCreatedAtDesc(Long paymentId);
+
     default Optional<Notification> findLatestBillNotification(Long billId) {
         return findTopByBillIdAndNotificationTypeOrderByCreatedAtDesc(billId, NotificationType.BILL_GENERATED);
     }
 
     default Optional<Notification> findLatestPaymentNotification(Long paymentId) {
-        return findTopByPaymentIdAndNotificationTypeOrderByCreatedAtDesc(paymentId, NotificationType.PAYMENT_COMPLETED);
+        return findTopByPaymentIdOrderByCreatedAtDesc(paymentId);
     }
 }

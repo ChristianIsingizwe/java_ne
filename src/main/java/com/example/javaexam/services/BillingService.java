@@ -48,6 +48,7 @@ public class BillingService implements BillingServiceContract {
     private final UserRepository userRepository;
     private final ApplicationMapper applicationMapper;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final NotificationGenerationService notificationGenerationService;
 
     @Transactional
     public BillResponse generate(GenerateBillRequest request, String generatedByEmail) {
@@ -158,6 +159,7 @@ public class BillingService implements BillingServiceContract {
         bill.setApprovedBy(approver);
         bill.setApprovedAt(LocalDateTime.now());
         billRepository.save(bill);
+        notificationGenerationService.createBillNotificationIfMissing(bill);
         applicationEventPublisher.publishEvent(new BillApprovedEvent(bill.getId()));
 
         return applicationMapper.toBillResponse(

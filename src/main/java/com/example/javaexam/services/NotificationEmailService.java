@@ -61,6 +61,7 @@ public class NotificationEmailService {
     private String buildSubject(Notification notification) {
         return switch (notification.getNotificationType()) {
             case BILL_GENERATED -> "Your utility bill is ready";
+            case PARTIAL_PAYMENT_RECEIVED -> "We received your partial utility bill payment";
             case PAYMENT_COMPLETED -> "Your utility bill has been fully paid";
         };
     }

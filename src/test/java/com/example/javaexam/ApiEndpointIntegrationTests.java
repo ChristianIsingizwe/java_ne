@@ -548,6 +548,58 @@ class ApiEndpointIntegrationTests {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void partialPaymentApprovalCreatesCustomerNotification() throws Exception {
+        String adminToken = loginAsAdmin();
+        CreatedUser financeUser = createManagedUser(adminToken, "ROLE_FINANCE");
+        String financeToken = login(financeUser.email(), DEFAULT_PASSWORD);
+
+        String customerEmail = uniqueEmail("partial-payment");
+        signupCustomer(customerEmail);
+        String customerToken = login(customerEmail, DEFAULT_PASSWORD);
+        long customerId = currentUser(customerToken).path("customerId").asLong();
+
+        seedWaterTariff(adminToken, LocalDate.now().withDayOfMonth(1));
+        JsonNode meter = createMeter(adminToken, customerId, LocalDate.now().minusDays(20));
+        JsonNode reading = captureReading(adminToken, meter.path("id").asLong(), "0.00", "30.00", LocalDate.now().minusDays(3));
+        JsonNode bill = createBill(financeToken, reading.path("id").asLong(), LocalDate.now().plusDays(12));
+        long billId = bill.path("id").asLong();
+        String billReference = bill.path("billReference").asText();
+
+        mockMvc.perform(post("/api/bills/{billId}/approve", billId)
+                        .header(AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APPROVED"));
+
+        JsonNode payment = recordPayment(financeToken, billReference, "10.00", LocalDate.now());
+        long paymentId = payment.path("id").asLong();
+
+        mockMvc.perform(post("/api/payments/{paymentId}/approve", paymentId)
+                        .header(AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("APPROVED"));
+
+        mockMvc.perform(get("/api/customer/notifications")
+                        .header(AUTHORIZATION, bearer(customerToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].notificationType").value("PARTIAL_PAYMENT_RECEIVED"))
+                .andExpect(jsonPath("$[0].paymentReference").isNotEmpty())
+                .andExpect(jsonPath("$[1].notificationType").value("BILL_GENERATED"));
+
+        mockMvc.perform(get("/api/customer/bills")
+                        .header(AUTHORIZATION, bearer(customerToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].status").value("PARTIALLY_PAID"));
+
+        mockMvc.perform(get("/api/notifications/customer/{customerId}", customerId)
+                        .header(AUTHORIZATION, bearer(financeToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].notificationType").value("PARTIAL_PAYMENT_RECEIVED"));
+    }
+
     private JsonNode currentUser(String token) throws Exception {
         MvcResult result = mockMvc.perform(get("/api/users/me")
                         .header(AUTHORIZATION, bearer(token)))

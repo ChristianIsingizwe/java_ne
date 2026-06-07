@@ -33,6 +33,7 @@ public class PaymentService implements PaymentServiceContract {
     private final UserRepository userRepository;
     private final ApplicationMapper applicationMapper;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final NotificationGenerationService notificationGenerationService;
 
     @Transactional
     public PaymentResponse record(RecordPaymentRequest request, String recordedByEmail) {
@@ -40,11 +41,11 @@ public class PaymentService implements PaymentServiceContract {
         Bill bill = billRepository.findByBillReference(billReference)
                 .orElseThrow(() -> ApiException.notFound("Bill not found"));
 
-        if (bill.getStatus() != BillStatus.APPROVED && bill.getStatus() != BillStatus.PARTIALLY_PAID) {
-            throw ApiException.badRequest("Payments can only be recorded against approved or partially paid bills");
-        }
         if (request.amountPaid().compareTo(bill.getOutstandingBalance()) > 0) {
             throw ApiException.badRequest("Payment amount cannot exceed the outstanding balance");
+        }
+        if (bill.getStatus() != BillStatus.APPROVED && bill.getStatus() != BillStatus.PARTIALLY_PAID) {
+            throw ApiException.badRequest("Payments can only be recorded against approved or partially paid bills");
         }
 
         User recordedBy = userRepository.findByEmailIgnoreCase(recordedByEmail)
@@ -85,6 +86,8 @@ public class PaymentService implements PaymentServiceContract {
         // Bill settlement is finalized by a database trigger so partial and full payment updates
         // stay consistent regardless of how the payment row is approved.
         paymentRepository.save(payment);
+        syncBillSettlement(payment, alreadyApproved.add(payment.getAmountPaid()));
+        notificationGenerationService.createPaymentNotificationIfMissing(payment);
         applicationEventPublisher.publishEvent(new PaymentApprovedEvent(payment.getId()));
 
         return applicationMapper.toPaymentResponse(payment);
@@ -100,5 +103,19 @@ public class PaymentService implements PaymentServiceContract {
         return paymentRepository.findByBillCustomerIdAndStatusOrderByCreatedAtDesc(customerId, PaymentStatus.APPROVED).stream()
                 .map(applicationMapper::toPaymentResponse)
                 .toList();
+    }
+
+    private void syncBillSettlement(Payment payment, BigDecimal approvedTotal) {
+        Bill bill = payment.getBill();
+        BigDecimal normalizedApprovedTotal = approvedTotal.setScale(2, RoundingMode.HALF_UP);
+        BigDecimal remainingBalance = bill.getTotalAmount()
+                .subtract(normalizedApprovedTotal)
+                .max(BigDecimal.ZERO)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        bill.setAmountPaid(normalizedApprovedTotal);
+        bill.setOutstandingBalance(remainingBalance);
+        bill.setStatus(remainingBalance.compareTo(BigDecimal.ZERO) == 0 ? BillStatus.PAID : BillStatus.PARTIALLY_PAID);
+        billRepository.save(bill);
     }
 }
